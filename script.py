@@ -37,12 +37,12 @@ option = st.selectbox(
 def probability(params, data):
     """
     確率 p を計算する関数
-    params: [β0, β1, β2, β3, β4, β5, β6, β7, β8, β9] （推定するパラメータ）
+    params: [β0, β1, β2, β3, β4, β5, β6, β7, β8, β9, β10] （推定するパラメータ）
     Temp, pH, bw, n: モデルの入力データ
     """
     Temp, pH, aw, n = data['Temp'], data['pH'], data['aw'], data['N0']
     bw = (1-aw)**(1/2)
-    β0, β1, β2, β3, β4, β5, β6, β7, β8, β9 = params
+    β0, β1, β2, β3, β4, β5, β6, β7, β8, β9, β10 = params
     # 線形予測子 η の計算
     eta = (
 	β0 +
@@ -58,14 +58,14 @@ def probability(params, data):
     )
     # 改良された確率計算式
     base_prob = 1 / (1 + np.exp(-eta))  # ロジスティック関数
-    p = 1 - (1 - base_prob) ** n
+    p = 1 - (1 - base_prob) ** (β10 * n)
     return p
 
 # 尤度関数の定義
 def negative_log_likelihood(params, data):
     """
     負の対数尤度を計算する関数（最適化対象）
-    params: [β0, β1, β2, β3, β4, β5, β6, β7, β8, β9]
+    params: [β0, β1, β2, β3, β4, β5, β6, β7, β8, β9, β10]
     data: 入力データ
     """
     #gngの定義
@@ -78,7 +78,7 @@ def negative_log_likelihood(params, data):
     return -log_likelihood  # 負の対数尤度を返す
 
 # 初期パラメータの設定
-initial_params = [0.1] * 10  # [β0, β1, ..., β6, β7, β8, β9]
+initial_params = [0.1] * 11  # [β0, β1, ..., β6, β7, β8, β9, β10]
 
 # 最適化の実行
 result = minimize(
@@ -86,7 +86,7 @@ result = minimize(
     initial_params,  # 初期パラメータ
     args=d,  # 関数に渡す追加引数
     method='L-BFGS-B',  # 最適化手法
-    bounds=[(-12, 12)] * 10   # パラメータの範囲
+    bounds=[(-12, 12)] * 11   # パラメータの範囲
 )
 
 # 最適化結果
@@ -127,7 +127,7 @@ if option == 'pH':
 		)
 		# 改良された確率計算式
 		base_prob = 1 / (1 + np.exp(-eta))  # ロジスティック関数
-		P = 1 - (1 - base_prob) ** n0_input
+		P = 1 - (1 - base_prob) ** (fitted_params[10] * n0_input)
 		return P
 	
 	X, Y = np.meshgrid(x, y)
@@ -182,7 +182,7 @@ if option == 'Water activity':
 		)
 		# 改良された確率計算式
 		base_prob = 1 / (1 + np.exp(-eta))  # ロジスティック関数
-		P = 1 - (1 - base_prob) ** n0_input
+		P = 1 - (1 - base_prob) ** (fitted_params[10] * n0_input)
 		return P
 	
 	X, Y = np.meshgrid(x, y)
@@ -235,7 +235,7 @@ if option == 'Temperature':
 		)
 		# 改良された確率計算式
 		base_prob = 1 / (1 + np.exp(-eta))  # ロジスティック関数
-		P = 1 - (1 - base_prob) ** n0_input
+		P = 1 - (1 - base_prob) ** (fitted_params[10] * n0_input)
 		return P
 	
 	X, Y = np.meshgrid(x, y)
